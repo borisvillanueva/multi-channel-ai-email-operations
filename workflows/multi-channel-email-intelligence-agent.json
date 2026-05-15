@@ -1,0 +1,689 @@
+{
+  "name": "Multi-Channel Email Intelligence Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -960,
+        128
+      ],
+      "id": "29d5cb40-023b-44d6-bf6c-589f8547db25",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"priorityScore\": {\n      \"type\": \"number\"\n    },\n    \"priorityLevel\": {\n      \"type\": \"string\"\n    },\n    \"category\": {\n      \"type\": \"string\"\n    },\n    \"isSponsorship\": {\n      \"type\": \"boolean\"\n    },\n    \"requiresAction\": {\n      \"type\": \"boolean\"\n    },\n    \"needsImmediateAttention\": {\n      \"type\": \"boolean\"\n    },\n    \"sentiment\": {\n      \"type\": \"string\"\n    },\n    \"summary\": {\n      \"type\": \"string\"\n    },\n    \"actionItems\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      }\n    },\n    \"reasoning\": {\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"priorityScore\",\n    \"priorityLevel\",\n    \"category\",\n    \"isSponsorship\",\n    \"requiresAction\",\n    \"needsImmediateAttention\",\n    \"sentiment\",\n    \"summary\",\n    \"actionItems\",\n    \"reasoning\"\n  ]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -800,
+        128
+      ],
+      "id": "5e5dfb4b-8aac-425e-b4ab-7971fd63a5ba",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1632,
+        -96
+      ],
+      "id": "8dcbc49a-3d39-41c2-9450-485c0e4e4e53",
+      "name": "Inbox Listener",
+      "credentials": {
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fee82d8e-d252-4df7-95cd-845ba5aefc1b",
+              "name": "Email Context",
+              "value": "=From: {{ $json.headers.from }}\n\nSubject: {{ $json.subject }}\n\nEmail Body: {{ $json.text }}\n",
+              "type": "string"
+            },
+            {
+              "id": "4805a68c-661f-4ee8-a413-8d789fb72a2b",
+              "name": "sender",
+              "value": "={{ $json.from.value[0].address }}",
+              "type": "string"
+            },
+            {
+              "id": "bead7121-7a41-4d6d-883c-133b124761c8",
+              "name": "emailSubject",
+              "value": "={{ $json.subject }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1184,
+        -96
+      ],
+      "id": "83a21be4-7e16-4912-a963-274c35459ab4",
+      "name": "Build Email Context"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Role:\nYou are an AI Email Intelligence Engine.\n\nYour task is to analyze incoming emails and classify them for an automated inbox intelligence workflow.\n\nAnalyze the email carefully and return ONLY valid JSON matching the required schema.\n\nYou must determine:\n- priorityScore\n- priorityLevel\n- category\n- isSponsorship\n- requiresAction\n- needsImmediateAttention\n- sentiment\n- summary\n- actionItems\n- reasoning\n\nPriority Rules:\n90-100 = Critical\n70-89 = High\n40-69 = Medium\n0-39 = Low\n\nCritical Examples:\n- production outage\n- urgent legal issue\n- executive escalation\n- payment failure\n\nHigh Examples:\n- sponsorship opportunity\n- customer issue\n- partnership request\n- meeting request\n\nMedium Examples:\n- normal work discussion\n- follow-up communication\n\nLow Examples:\n- newsletter\n- promotion\n- social update\n\nCategory Examples:\n- sponsorship\n- customer\n- finance\n- meeting\n- internal\n- marketing\n- newsletter\n- support\n- legal\n- operations\n\nSentiment Examples:\n- positive\n- neutral\n- negative\n- urgent\n\nRules:\n- Return ONLY valid JSON\n- No markdown\n- No explanations outside JSON\n- actionItems must always be an array\n- summary must be concise\n- reasoning should briefly explain the classification\n\nEmail Context:\n{{ $json[\"Email Context\"] }}",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -960,
+        -96
+      ],
+      "id": "7e0f6e28-fb01-449f-9db2-8cc69b303bb6",
+      "name": "Sponsorship Classifier",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "33a429be-fc64-42d0-96fc-5cca2e6bd721",
+              "leftValue": "={{ $json.from.value[0].address }}",
+              "rightValue": "YOUR_EMAIL@example.com",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1408,
+        -96
+      ],
+      "id": "5811b2c7-ad90-4175-985e-cc900dc83b5b",
+      "name": "Self Email Protection"
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "=🚨 High Priority Email Detected\n\nPriority: {{$json.priorityLevel}}\n\nCategory: {{$json.category}}\n\nFrom: {{$json.sender}}\n\nSubject: {{$json.subject}}\n\nSummary:\n{{$json.summary}}\n\nAction Items:\n{{$json.actionItems}}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -224,
+        -320
+      ],
+      "id": "95fe9d55-4fe8-4134-b9a6-d2633398b883",
+      "name": "Send Telegram Escalation",
+      "credentials": {
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "546eafab-0a84-43d9-948a-04b2b1f7f999",
+              "leftValue": "={{ $json.isSponsorship }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -368,
+        224
+      ],
+      "id": "51ef982a-a0a0-4ef3-b685-9435f2a6fb23",
+      "name": "Sponsorship Check"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "8a398766-07b2-4ad9-b8ff-7588bdc2c5a3",
+                    "leftValue": "={{ $json.priorityLevel }}",
+                    "rightValue": "High",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -416,
+        -224
+      ],
+      "id": "9990075c-dcfb-4637-9cb9-4798b281d10b",
+      "name": "Priority Router"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "YOUR_SLACK_WEBHOOK_URL",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"text\": \"🚨 High Priority Email\\n\\nCategory: {{$json.category}}\\nSender: {{$json.sender}}\\nSubject: {{$json.subject}}\\n\\nSummary:\\n{{$json.summary}}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -224,
+        -128
+      ],
+      "id": "34894fa4-2cbc-4203-becf-3b64267ba06f",
+      "name": "Send Slack Alert"
+    },
+    {
+      "parameters": {
+        "content": "## 📥Email Intake Layer:\nMonitors incoming emails and prepares structured context for AI analysis.\n",
+        "height": 112,
+        "width": 368
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1536,
+        -224
+      ],
+      "typeVersion": 1,
+      "id": "bb74467c-9c38-47dc-bcca-58f5d59d2c82",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## 🧠 AI Decision Layer:\nClassifies emails, extracts actions, assigns priority, and structures outputs using AI. \n"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -976,
+        -304
+      ],
+      "typeVersion": 1,
+      "id": "814c8d21-e1d0-48a5-bf48-027798804342",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## 🗂 Memory Layer:\nStores persistent AI email intelligence records in Google Sheets.",
+        "width": 192
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -656,
+        -304
+      ],
+      "typeVersion": 1,
+      "id": "2d33a887-e3df-484b-9da2-4e7410477cd1",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## 🚨 Escalation Layer:\nRoutes high-priority emails to operational alert channels.\n",
+        "width": 208
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -432,
+        -496
+      ],
+      "typeVersion": 1,
+      "id": "0d230ecb-0297-4e7b-a896-08905ba98f2d",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## ✉ Automated Response Layer:\nGenerates contextual AI-powered sponsor responses automatically."
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -304,
+        32
+      ],
+      "typeVersion": 1,
+      "id": "a0e55834-f1e2-4a6b-a02e-abecce624df4",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "AI Email Intelligence Memory",
+          "cachedResultUrl": "https://docs.google.com"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $now }}",
+            "sender": "={{ $('Inbox Listener').item.json.from.value[0].address }}",
+            "subject": "={{ $('Inbox Listener').item.json.subject }}",
+            "priorityScore": "={{ $json.output.priorityScore }}",
+            "priorityLevel": "={{ $json.output.priorityLevel }}",
+            "category": "={{ $json.output.category }}",
+            "isSponsorship": "={{ $json.output.isSponsorship }}",
+            "requiresAction": "={{ $json.output.requiresAction }}",
+            "needsImmediateAttention": "={{ $json.output.needsImmediateAttention }}",
+            "sentiment": "={{ $json.output.sentiment }}",
+            "summary": "={{ $json.output.summary }}",
+            "actionItems": "={{ $json.output.actionItems.join(\", \") }}",
+            "reasoning": "={{ $json.output.reasoning }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sender",
+              "displayName": "sender",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "priorityScore",
+              "displayName": "priorityScore",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "priorityLevel",
+              "displayName": "priorityLevel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "isSponsorship",
+              "displayName": "isSponsorship",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "requiresAction",
+              "displayName": "requiresAction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "needsImmediateAttention",
+              "displayName": "needsImmediateAttention",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sentiment",
+              "displayName": "sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "actionItems",
+              "displayName": "actionItems",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reasoning",
+              "displayName": "reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -608,
+        -96
+      ],
+      "id": "760e9866-ea6b-4a01-868f-7c2f0f8fe2fe",
+      "name": "AI Memory Layer",
+      "credentials": {
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are an AI sponsorship assistant.\n\nWrite a concise, professional sponsorship reply email.\n\nContext:\nSender: {{$json.sender}}\n\nSubject: {{$json.subject}}\n\nSummary:\n{{$json.summary}}\n\nAction Items:\n{{$json.actionItems}}\n\nRequirements:\n- Sound professional and friendly\n- Thank them for reaching out\n- Express interest in learning more\n- Mention audience alignment with AI automation\n- Suggest scheduling a short introductory call\n- Keep the email concise\n- Do not use overly corporate language\n- Do not generate a subject line\n- Return ONLY the email body\n- Sign the email as:\n\nBest,\n\nBoris Villanueva\nAI Automation Creator\nAI Automation with Boris"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        -144,
+        208
+      ],
+      "id": "2948c0d7-b0d6-4397-b324-720d638f97a7",
+      "name": "Generate Sponsor Reply",
+      "credentials": {
+      }
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('Inbox Listener').item.json.id }}",
+        "message": "={{ $json.output[0].content[0].text }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        208
+      ],
+      "id": "b35b3f80-ed06-4cea-ac96-4c6bfc2caab7",
+      "name": "Send Gmail Reply",
+      "credentials": {
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Sponsorship Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Sponsorship Classifier",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inbox Listener": {
+      "main": [
+        [
+          {
+            "node": "Self Email Protection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Email Context": {
+      "main": [
+        [
+          {
+            "node": "Sponsorship Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sponsorship Classifier": {
+      "main": [
+        [
+          {
+            "node": "AI Memory Layer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Self Email Protection": {
+      "main": [
+        [
+          {
+            "node": "Build Email Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sponsorship Check": {
+      "main": [
+        [
+          {
+            "node": "Generate Sponsor Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Telegram Escalation": {
+      "main": [
+        []
+      ]
+    },
+    "Priority Router": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram Escalation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Slack Alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Sponsorship Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Memory Layer": {
+      "main": [
+        [
+          {
+            "node": "Priority Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Sponsor Reply": {
+      "main": [
+        [
+          {
+            "node": "Send Gmail Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "EzXpSDW2kUXtFyzl",
+  "tags": []
+}
