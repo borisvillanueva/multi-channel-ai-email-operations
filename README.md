@@ -218,28 +218,17 @@ multi-channel-ai-email-operations/
 │   ├── multi-channel-email-intelligence-agent.json
 │   └── daily-email-intelligence-digest.json
 │
-├── screenshots/
-│   ├── hero-workflow-overview.png
-│   ├── ai-classification-layer.png
-│   ├── escalation-routing-layer.png
-│   ├── sponsor-auto-reply.png
-│   ├── telegram-alert-demo.png
-│   ├── slack-alert-demo.png
-│   ├── google-sheets-memory.png
-│   ├── daily-digest-email.png
-│   ├── sponsor-email-reply-demo.png
-│   └── workflow-execution-success.png
-│
-├── docs/
-│   ├── architecture-overview.md
-│   ├── setup-guide.md
-│   └── security-notes.md
-│
-└── examples/
-    ├── sample-sponsorship-email.txt
-    ├── sample-slack-alert.txt
-    ├── sample-telegram-alert.txt
-    └── sample-digest-output.txt
+└── screenshots/
+    ├── hero-workflow-overview.png
+    ├── ai-classification-layer.png
+    ├── escalation-routing-layer.png
+    ├── sponsor-auto-reply.png
+    ├── telegram-alert-demo.png
+    ├── slack-alert-demo.png
+    ├── google-sheets-memory.png
+    ├── daily-digest-email.png
+    ├── sponsor-email-reply-demo.png
+    └── workflow-execution-success.png
 ```
 
 ---
